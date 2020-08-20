@@ -1528,6 +1528,7 @@ void bplus_tree_deinit(struct bplus_tree *tree)
 
 /**以下部分是绘图操作**/
 
+/*B+树的最大层数*/
 #define MAX_LEVEL 10
 
 /*
@@ -1595,12 +1596,14 @@ static void draw(struct bplus_tree *tree, struct bplus_node *node, struct node_b
 }
 
 /*
-绘图入口
+绘图入口，用栈实现遍历
 */
 void bplus_tree_dump(struct bplus_tree *tree)
 {
 		/*
-		
+		p_nbl------------------层节点
+		nbl_stack--------------栈
+		top--------------------栈顶
 		*/
         int level = 0;
         struct bplus_node *node = node_seek(tree, tree->root);
@@ -1615,7 +1618,7 @@ void bplus_tree_dump(struct bplus_tree *tree)
                         /*重置每个循环*/
                         p_nbl = NULL;
 
-                        /*积压节点*/
+                        /*积压节点，每一层一个节点*/
                         if (is_leaf(node) || sub_idx + 1 >= children(node)) {
                                 top->offset = INVALID_OFFSET;
                                 top->next_sub_idx = 0;
@@ -1626,6 +1629,7 @@ void bplus_tree_dump(struct bplus_tree *tree)
 						
 						/*指向nbl_stack的下一个元素*/
                         top++;
+						/*查找下一层数据*/
                         level++;
 
                         /*绘制第一次通过时的节点*/

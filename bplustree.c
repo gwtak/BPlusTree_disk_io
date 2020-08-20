@@ -46,7 +46,7 @@ enum {
 |			|		|		|		|		|		|		|		|		|		|		|		|
 |---------------------------------------------------------------------------------------------------
 |			|		|		|		|		|		|		|		|		|		|		|		|
-|非叶子节点	|  node | key 	| key 	| key 	| key 	|  ptr  |  ptr  |  ptr  |  ptr  |	ptr	|	ptr	|
+|非叶子节点	|  node | key 	| key 	| key 	| key 	|  ptr  |  ptr  |  ptr  |  ptr  |  ptr	|  ptr	|
 |			|		|		|		|		|		|		|		|		|		|		|		|
  ---------------------------------------------------------------------------------------------------
 key和data的个数由_max_entries决定：_max_entries = (_block_size - sizeof(node)) / (sizeof(key_t) + sizeof(long));
@@ -1526,12 +1526,17 @@ void bplus_tree_deinit(struct bplus_tree *tree)
 }
 
 
+/**以下部分是绘图操作**/
+
 #define MAX_LEVEL 10
 
+/*
+积压节点
+off_t offset-------------------偏移量
+int next_sub_idx---------------下一个数据在节点内的位置
+*/
 struct node_backlog {
-        /* Node backlogged */
         off_t offset;
-        /* The index next to the backtrack point, must be >= 1 */
         int next_sub_idx;
 };
 
@@ -1544,9 +1549,13 @@ static inline int children(struct bplus_node *node)
         return node->children;
 }
 
+/*
+绘制键值
+*/
 static void node_key_dump(struct bplus_node *node)
 {
         int i;
+		/*叶子节点的键值比非叶子节点的键值多一个*/
         if (is_leaf(node)) {
                 printf("leaf:");
                 for (i = 0; i < node->children; i++) {
@@ -1563,6 +1572,10 @@ static void node_key_dump(struct bplus_node *node)
 
 /*
 绘图
+struct bplus_tree *tree-------------------------B+树信息结构体
+struct bplus_node *node-------------------------B+树当前节点
+struct node_backlog *stack----------------------存放节点的栈
+int level---------------------------------------节点所在层数
 */
 static void draw(struct bplus_tree *tree, struct bplus_node *node, struct node_backlog *stack, int level)
 {
@@ -1586,6 +1599,9 @@ static void draw(struct bplus_tree *tree, struct bplus_node *node, struct node_b
 */
 void bplus_tree_dump(struct bplus_tree *tree)
 {
+		/*
+		
+		*/
         int level = 0;
         struct bplus_node *node = node_seek(tree, tree->root);
         struct node_backlog *p_nbl = NULL;
@@ -1594,7 +1610,7 @@ void bplus_tree_dump(struct bplus_tree *tree)
 
         for (; ;) {
                 if (node != NULL) {
-                        /*非零需要向后，零不需要*/
+                        /*sub_idx用于定位非叶子节点中的指针*/
                         int sub_idx = p_nbl != NULL ? p_nbl->next_sub_idx : 0;
                         /*重置每个循环*/
                         p_nbl = NULL;
@@ -1607,20 +1623,22 @@ void bplus_tree_dump(struct bplus_tree *tree)
                                 top->offset = node->self;
                                 top->next_sub_idx = sub_idx + 1;
                         }
+						
+						/*指向nbl_stack的下一个元素*/
                         top++;
                         level++;
 
-                        /* Draw the node when first passed through */
+                        /*绘制第一次通过时的节点*/
                         if (sub_idx == 0) {
                                 draw(tree, node, nbl_stack, level);
                         }
 
-                        /* Move deep down */
+                        /*向下移动*/
                         node = is_leaf(node) ? NULL : node_seek(tree, sub(node)[sub_idx]);
                 } else {
                         p_nbl = top == nbl_stack ? NULL : --top;
                         if (p_nbl == NULL) {
-                                /* End of traversal */
+                                /*遍历结束*/
                                 break;
                         }
                         node = node_seek(tree, p_nbl->offset);

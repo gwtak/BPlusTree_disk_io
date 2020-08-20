@@ -1,5 +1,5 @@
-main.out:bplustree.o bplustree_demo.o
-	gcc  *.o -o main.out
+bplustree_demo.out:bplustree.o bplustree_demo.o
+	gcc  *.o -o bplustree_demo.out
 	
 bplustree.o:bplustree.c
 	gcc -c bplustree.c -o bplustree.o 
